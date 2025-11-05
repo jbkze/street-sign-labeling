@@ -134,7 +134,7 @@ st.markdown(
 )
 
 # --- Examples ---
-show_example_images()
+#show_example_images()
 
 
 # --- Login ---
