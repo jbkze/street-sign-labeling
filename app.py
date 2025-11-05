@@ -11,7 +11,7 @@ IMAGE_DIR = os.path.join(BASE_DIR, "GTSD-220-test")
 EXAMPLES_DIR = os.path.join(BASE_DIR, "examples")
 
 CLASSES = {
-    "okay": "**Okay / No Defect**",
+    #"okay": "**Okay / No Defect**",
     "obscured": "Stickers / Graffiti",
     "deterioration": "Weathering / Aging",
     "blurred": "Motion Blur",
@@ -24,7 +24,7 @@ CLASSES = {
 REVERSE_CLASSES = {v: k for k, v in CLASSES.items()}
 
 CLASS_EXPLANATIONS = {
-    "okay": "The traffic sign is in good condition, clearly visible, and fully legible.",
+    #"okay": "The traffic sign is in good condition, clearly visible, and fully legible.",
     "obscured": "Covered by stickers or graffiti, partially blocking the sign.",
     "deterioration": "Natural wear like fading, peeling, or rust.",
     "blurred": "Motion blur from moving platforms, softening edges.",
@@ -160,22 +160,31 @@ if st.session_state.user:
             st.image(img_path, width='stretch')
 
         with col_labels:
-            radio_key = f"label_{img_path}"
-            st.markdown("<style>[role=radiogroup]{ gap:0.6rem; }</style>", unsafe_allow_html=True)
+            st.info("Select defects (if any) and click Submit.")
 
-            label_choice = st.radio(
-                "Choose a label:",
-                options=CLASSES.values(),
-                key=radio_key,
-                index=0
-            )
-            current_class = [k for k, v in CLASSES.items() if v == label_choice][0]
-            st.caption(CLASS_EXPLANATIONS[current_class])
+            # Optionen und Default
+            options_list = list(CLASSES.values())
+
+            # Dictionary für Checkbox-Werte
+            label_choices = {}
+
+            for i, label in enumerate(options_list):
+                # Erster Wert standardmäßig ausgewählt
+                #default_checked = True if i == 0 else False
+                checkbox_key = f"{img_path}_checkbox_{i}"
+                
+                label_choices[label] = st.checkbox(label, key=checkbox_key)
+
+            # Ausgewählte Labels filtern
+            selected_labels = [label for label, checked in label_choices.items() if checked]
+
+            #current_class = [k for k, v in CLASSES.items() if v == label_choice][0]
+            #st.caption(CLASS_EXPLANATIONS[current_class])
 
             if st.button("✅ Submit"):
                 rel_path = os.path.relpath(img_path, IMAGE_DIR)
-                label_choice = REVERSE_CLASSES[label_choice]
-                save_label_bg(st.session_state.user, rel_path, label_choice)
+                selected_labels = [REVERSE_CLASSES[choice] for choice in selected_labels]
+                save_label_bg(st.session_state.user, rel_path, selected_labels)
                 st.session_state.current_image = select_random_image(get_unlabeled_images(all_images))
                 #st.success("Saved!")
                 st.rerun()
