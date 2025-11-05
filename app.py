@@ -119,9 +119,12 @@ if st.session_state.user is None:
     show_example_images()
     
     with col1:
-        if st.button("Start") and name.strip():
-            st.session_state.user = name.strip()
-            st.rerun()
+        if st.button("Start"):
+            if name.strip():
+                st.session_state.user = name.strip()
+                st.rerun()
+            else:
+                st.warning("Please enter your name.")
 
 
 # --- Main labeling ---
