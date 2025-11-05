@@ -3,6 +3,7 @@ import os
 import random
 from datetime import datetime
 from st_supabase_connection import SupabaseConnection
+import threading
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,20 +38,27 @@ st.set_page_config(page_title="Street Sign Conditions", page_icon="🚦", layout
 conn = st.connection("supabase", type=SupabaseConnection)
 TABLE_NAME = "labels"
 
-def save_label(user, image, label):
-    conn.table("labels").insert(
-        [{"user": user, 
-          "image": image, 
-          "label": label, 
-          "timestamp": datetime.now().isoformat()}],
-        count="None"
-    ).execute()
+def save_label_bg(user, image, label):
+    """Save label in a background thread."""
+    def _save():
+        conn.table("labels").insert(
+            [{"user": user,
+              "image": image,
+              "label": label,
+              "timestamp": datetime.now().isoformat()}],
+            count="None"
+        ).execute()
+    threading.Thread(target=_save, daemon=True).start()
+
+def fetch_labels():
+    rows = conn.table(TABLE_NAME).select("*").execute().data
+    return rows
 
 def get_unlabeled_images(all_images):
     """
     Return images labeled by less than 2 users.
     """
-    rows = conn.table(TABLE_NAME).select("*").execute().data
+    rows = fetch_labels()  # gecachte Daten
     counts = {}
     for r in rows:
         counts[r["image"]] = counts.get(r["image"], set())
@@ -58,7 +66,7 @@ def get_unlabeled_images(all_images):
     return [img for img in all_images if len(counts.get(img, set())) < 2]
 
 def get_count(min_users=1):
-    rows = conn.table(TABLE_NAME).select("*").execute().data
+    rows = fetch_labels()  # gecachte Daten
     counts = {}
     for r in rows:
         counts[r["image"]] = counts.get(r["image"], set())
@@ -69,6 +77,7 @@ def get_count(min_users=1):
         return sum(1 for users in counts.values() if len(users) >= min_users)
 
 # ---------------- UTILS ----------------
+@st.cache_data
 def load_images_list():
     valid_exts = (".jpg", ".jpeg", ".png")
     image_paths = []
@@ -162,7 +171,7 @@ if st.session_state.user:
 
             if st.button("✅ Submit"):
                 rel_path = os.path.relpath(img_path, IMAGE_DIR)
-                save_label(st.session_state.user, rel_path, label_choice)
+                save_label_bg(st.session_state.user, rel_path, label_choice)
                 st.session_state.current_image = select_random_image(get_unlabeled_images(all_images))
                 #st.success("Saved!")
                 st.rerun()
