@@ -4,6 +4,7 @@ import random
 from datetime import datetime
 from st_supabase_connection import SupabaseConnection
 import threading
+import time
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,43 +53,53 @@ def save_label_bg(user, image, label):
         ).execute()
     threading.Thread(target=_save, daemon=True).start()
 
-@st.cache_data(ttl=30)
-def fetch_labels():
-    rows = conn.table(TABLE_NAME).select("*").execute().data
-    return rows
-
-def get_unlabeled_images(all_images):
-    """
-    Return images labeled by less than 2 users.
-    """
-    rows = fetch_labels()  # gecachte Daten
-    counts = {}
-    for r in rows:
-        counts[r["image"]] = counts.get(r["image"], set())
-        counts[r["image"]].add(r["user"])
-    return [img for img in all_images if len(counts.get(img, set())) < 2]
-
-def get_count(min_users=1):
-    rows = fetch_labels()  # gecachte Daten
-    counts = {}
-    for r in rows:
-        counts[r["image"]] = counts.get(r["image"], set())
-        counts[r["image"]].add(r["user"])
-    if min_users == 1:
-        return sum(1 for users in counts.values() if len(users) >= 1)
-    else:
-        return sum(1 for users in counts.values() if len(users) >= min_users)
-
-# ---------------- UTILS ----------------
 @st.cache_data
 def load_images_list():
+    start = time.perf_counter()
     valid_exts = (".jpg", ".jpeg", ".png")
     image_paths = []
     for root, _, files in os.walk(IMAGE_DIR):
         for file in files:
             if file.lower().endswith(valid_exts):
                 image_paths.append(os.path.join(root, file))
+    duration = time.perf_counter() - start
+    st.write(f"load_images_list took {duration:.3f}s")
     return image_paths
+
+@st.cache_data(ttl=30)
+def fetch_labels():
+    start = time.perf_counter()
+    rows = conn.table(TABLE_NAME).select("*").execute().data
+    duration = time.perf_counter() - start
+    st.write(f"fetch_labels took {duration:.3f}s")
+    return rows
+
+def get_unlabeled_images(all_images):
+    start = time.perf_counter()
+    rows = fetch_labels()  # gecachte Daten
+    counts = {}
+    for r in rows:
+        counts[r["image"]] = counts.get(r["image"], set())
+        counts[r["image"]].add(r["user"])
+    result = [img for img in all_images if len(counts.get(img, set())) < 2]
+    duration = time.perf_counter() - start
+    st.write(f"get_unlabeled_images took {duration:.3f}s")
+    return result
+
+def get_count(min_users=1):
+    start = time.perf_counter()
+    rows = fetch_labels()  # gecachte Daten
+    counts = {}
+    for r in rows:
+        counts[r["image"]] = counts.get(r["image"], set())
+        counts[r["image"]].add(r["user"])
+    if min_users == 1:
+        count = sum(1 for users in counts.values() if len(users) >= 1)
+    else:
+        count = sum(1 for users in counts.values() if len(users) >= min_users)
+    duration = time.perf_counter() - start
+    st.write(f"get_count(min_users={min_users}) took {duration:.3f}s")
+    return count
 
 def show_example_images():
     with st.expander("ℹ️ Example images per defect class"):
@@ -102,7 +113,7 @@ def show_example_images():
                 cols = st.columns(len(sample_images))
                 for col, img_file in zip(cols, sample_images):
                     col.image(os.path.join(class_path, img_file), width='stretch')
-                
+    
 def select_random_image(unlabeled):
     return random.choice(unlabeled) if unlabeled else None
 
