@@ -113,10 +113,11 @@ st.markdown(
 # --- Login ---
 if st.session_state.user is None:
     name = st.text_input("Enter your name:")
-    col1, col2 = st.columns([1, 1])
     
     # --- Examples ---
     show_example_images()
+
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         if st.button("Start"):
