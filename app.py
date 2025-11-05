@@ -172,6 +172,16 @@ if st.session_state.user:
             st.image(img_path, width='stretch')
             duration = time.perf_counter() - start
             st.write(f"Rendering image took {duration:.3f}s")
+            
+            # Zeit seit Submit messen
+            if "last_submit_time" in st.session_state:
+                if st.session_state.last_submit_time is not None:
+                    total_time = time.perf_counter() - st.session_state.last_submit_time
+                    st.write(f"Time from submit to new image displayed: {total_time:.3f}s")
+                    # Optional zurücksetzen
+                    st.session_state.last_submit_time = None
+
+
 
         with col_labels:
             radio_key = f"label_{img_path}"
@@ -187,6 +197,10 @@ if st.session_state.user:
             st.caption(CLASS_EXPLANATIONS[current_class])
 
             if st.button("✅ Submit"):
+                st.session_state.last_submit_time = time.perf_counter()
+
+                print(st.session_state)
+                
                 rel_path = os.path.relpath(img_path, IMAGE_DIR)
                 label_choice = REVERSE_CLASSES[label_choice]
                 save_label_bg(st.session_state.user, rel_path, label_choice)
