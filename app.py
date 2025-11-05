@@ -7,7 +7,7 @@ import threading
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AWS_URL = "https://street-sign-conditions.s3.us-east-1.amazonaws.com/GTSD-220-test/"
+AWS_URL = "https://d3b45akprxecp4.cloudfront.net/GTSD-220-test/"
 EXAMPLES_DIR = os.path.join(BASE_DIR, "examples")
 
 CLASSES = {
