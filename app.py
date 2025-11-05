@@ -21,8 +21,10 @@ CLASSES = {
     "angle": "Unusual Perspective"
 }
 
+REVERSE_CLASSES = {v: k for k, v in CLASSES.items()}
+
 CLASS_EXPLANATIONS = {
-    "okay": "Sign in good condition.",
+    "okay": "The traffic sign is in good condition, clearly visible, and fully legible without any damage or obstruction."
     "obscured": "Covered by stickers or graffiti, partially blocking the sign.",
     "deterioration": "Natural wear like fading, peeling, or rust.",
     "blurred": "Motion blur from moving platforms, softening edges.",
@@ -172,6 +174,7 @@ if st.session_state.user:
 
             if st.button("✅ Submit"):
                 rel_path = os.path.relpath(img_path, IMAGE_DIR)
+                label_choice = REVERSE_CLASSES[label_choice]
                 save_label_bg(st.session_state.user, rel_path, label_choice)
                 st.session_state.current_image = select_random_image(get_unlabeled_images(all_images))
                 #st.success("Saved!")
