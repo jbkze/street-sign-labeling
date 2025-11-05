@@ -24,7 +24,7 @@ CLASSES = {
 REVERSE_CLASSES = {v: k for k, v in CLASSES.items()}
 
 CLASS_EXPLANATIONS = {
-    "okay": "The traffic sign is in good condition, clearly visible, and fully legible without any damage or obstruction."
+    "okay": "The traffic sign is in good condition, clearly visible, and fully legible without any damage or obstruction.",
     "obscured": "Covered by stickers or graffiti, partially blocking the sign.",
     "deterioration": "Natural wear like fading, peeling, or rust.",
     "blurred": "Motion blur from moving platforms, softening edges.",
