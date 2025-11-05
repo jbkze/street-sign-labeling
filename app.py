@@ -7,7 +7,7 @@ from datetime import datetime
 # ---------------- CONFIG ----------------
 DB_FILE = "labels.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGE_DIR = os.path.join(BASE_DIR, "GTSD-220")
+IMAGE_DIR = os.path.join(BASE_DIR, "GTSD-220-test")
 TEST_FILE = os.path.join(BASE_DIR, "test.txt")
 EXAMPLES_DIR = os.path.join(BASE_DIR, "examples")
 
@@ -82,9 +82,15 @@ def get_count(min_users=1):
 
 # ---------------- UTILS ----------------
 def load_images_list():
-    with open(TEST_FILE, "r") as f:
-        images = [line.strip() for line in f if line.strip()]
-    return [os.path.join(IMAGE_DIR, img) for img in images if os.path.exists(os.path.join(IMAGE_DIR, img))]
+    valid_exts = (".jpg", ".jpeg", ".png")
+    image_paths = []
+
+    for root, _, files in os.walk(IMAGE_DIR):
+        for file in files:
+            if file.lower().endswith(valid_exts):
+                image_paths.append(os.path.join(root, file))
+
+    return image_paths
 
 def show_example_images():
     with st.expander("ℹ️ Example images per defect class"):
