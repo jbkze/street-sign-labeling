@@ -75,31 +75,31 @@ def fetch_labels():
     return rows
 
 def get_unlabeled_images(all_images):
-    start = time.perf_counter()
-    rows = fetch_labels()  # gecachte Daten
-    counts = {}
-    for r in rows:
-        counts[r["image"]] = counts.get(r["image"], set())
-        counts[r["image"]].add(r["user"])
-    result = [img for img in all_images if len(counts.get(img, set())) < 2]
-    duration = time.perf_counter() - start
-    st.write(f"get_unlabeled_images took {duration:.3f}s")
-    return result
+    #start = time.perf_counter()
+    #rows = fetch_labels()  # gecachte Daten
+    #counts = {}
+    #for r in rows:
+    #    counts[r["image"]] = counts.get(r["image"], set())
+    #    counts[r["image"]].add(r["user"])
+    #result = [img for img in all_images if len(counts.get(img, set())) < 2]
+    #duration = time.perf_counter() - start
+    #st.write(f"get_unlabeled_images took {duration:.3f}s")
+    return all_images
 
 def get_count(min_users=1):
-    start = time.perf_counter()
-    rows = fetch_labels()  # gecachte Daten
-    counts = {}
-    for r in rows:
-        counts[r["image"]] = counts.get(r["image"], set())
-        counts[r["image"]].add(r["user"])
-    if min_users == 1:
-        count = sum(1 for users in counts.values() if len(users) >= 1)
-    else:
-        count = sum(1 for users in counts.values() if len(users) >= min_users)
-    duration = time.perf_counter() - start
-    st.write(f"get_count(min_users={min_users}) took {duration:.3f}s")
-    return count
+    #start = time.perf_counter()
+    #rows = fetch_labels()  # gecachte Daten
+    #counts = {}
+    #for r in rows:
+    #    counts[r["image"]] = counts.get(r["image"], set())
+    #    counts[r["image"]].add(r["user"])
+    #if min_users == 1:
+    #    count = sum(1 for users in counts.values() if len(users) >= 1)
+    #else:
+    #    count = sum(1 for users in counts.values() if len(users) >= min_users)
+    #duration = time.perf_counter() - start
+    #st.write(f"get_count(min_users={min_users}) took {duration:.3f}s")
+    return 10
 
 def show_example_images():
     with st.expander("ℹ️ Example images per defect class"):
