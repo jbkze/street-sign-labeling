@@ -168,7 +168,10 @@ if st.session_state.user:
         col_img, col_labels = st.columns([5, 3], gap="large")
 
         with col_img:
+            start = time.perf_counter()
             st.image(img_path, width='stretch')
+            duration = time.perf_counter() - start
+            st.write(f"Rendering image took {duration:.3f}s")
 
         with col_labels:
             radio_key = f"label_{img_path}"
