@@ -7,7 +7,7 @@ import threading
 
 # ---------------- CONFIG ----------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-IMAGE_DIR = os.path.join(BASE_DIR, "GTSD-220-test")
+AWS_URL = "https://street-sign-conditions.s3.us-east-1.amazonaws.com/GTSD-220-test/"
 EXAMPLES_DIR = os.path.join(BASE_DIR, "examples")
 
 CLASSES = {
@@ -82,12 +82,19 @@ def get_count(min_users=1):
 # ---------------- UTILS ----------------
 @st.cache_data
 def load_images_list():
-    valid_exts = (".jpg", ".jpeg", ".png")
     image_paths = []
-    for root, _, files in os.walk(IMAGE_DIR):
-        for file in files:
-            if file.lower().endswith(valid_exts):
-                image_paths.append(os.path.join(root, file))
+    test_file = os.path.join(BASE_DIR, "test.txt")
+
+    if not os.path.exists(test_file):
+        st.error(f"File not found: {test_file}")
+        return []
+
+    with open(test_file, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                image_paths.append(line)
+    
     return image_paths
 
 def show_example_images():
@@ -143,7 +150,7 @@ if st.session_state.user is None:
 
 # --- Main labeling ---
 if st.session_state.user:
-    all_images = load_images_list()
+    all_images = load_images_list()    
     unlabeled = get_unlabeled_images(all_images)
     
     if not unlabeled:
@@ -157,7 +164,7 @@ if st.session_state.user:
         col_img, col_labels = st.columns([5, 3], gap="large")
 
         with col_img:
-            st.image(img_path, width='stretch')
+            st.image(AWS_URL + img_path, width='stretch')
 
         with col_labels:
             st.info("Select defects (if any) and click Submit.")
@@ -182,9 +189,9 @@ if st.session_state.user:
             #st.caption(CLASS_EXPLANATIONS[current_class])
 
             if st.button("✅ Submit"):
-                rel_path = os.path.relpath(img_path, IMAGE_DIR)
+                #rel_path = os.path.relpath(img_path, IMAGE_DIR)
                 selected_labels = [REVERSE_CLASSES[choice] for choice in selected_labels]
-                save_label_bg(st.session_state.user, rel_path, selected_labels)
+                save_label_bg(st.session_state.user, img_path, selected_labels)
                 st.session_state.current_image = select_random_image(get_unlabeled_images(all_images))
                 #st.success("Saved!")
                 st.rerun()
