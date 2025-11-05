@@ -114,13 +114,15 @@ st.markdown(
 if st.session_state.user is None:
     name = st.text_input("Enter your name:")
     col1, col2 = st.columns([1, 1])
+    
+    # --- Examples ---
+    show_example_images()
+    
     with col1:
         if st.button("Start") and name.strip():
             st.session_state.user = name.strip()
             st.rerun()
 
-# --- Examples ---
-show_example_images()
 
 # --- Main labeling ---
 if st.session_state.user:
