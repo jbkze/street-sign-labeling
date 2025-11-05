@@ -50,6 +50,7 @@ def save_label_bg(user, image, label):
         ).execute()
     threading.Thread(target=_save, daemon=True).start()
 
+@st.cache_data(ttl=30)
 def fetch_labels():
     rows = conn.table(TABLE_NAME).select("*").execute().data
     return rows
