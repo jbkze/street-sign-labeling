@@ -163,7 +163,7 @@ if st.session_state.user:
                 rel_path = os.path.relpath(img_path, IMAGE_DIR)
                 save_label(st.session_state.user, rel_path, label_choice)
                 st.session_state.current_image = select_random_image(get_unlabeled_images(all_images))
-                st.success("Saved!")
+                #st.success("Saved!")
                 st.rerun()
 
         # --- Progress bars ---
