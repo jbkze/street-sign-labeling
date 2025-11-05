@@ -110,11 +110,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- Examples ---
+show_example_images()
+
+
 # --- Login ---
 if st.session_state.user is None:
-    # --- Examples ---
-    show_example_images()
-
     name = st.text_input("Enter your name:")
     
     col1, col2 = st.columns([1, 1])
