@@ -1,14 +1,12 @@
 import streamlit as st
-import sqlite3
 import os
 import random
 from datetime import datetime
+from st_supabase_connection import SupabaseConnection
 
 # ---------------- CONFIG ----------------
-DB_FILE = "labels.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DIR = os.path.join(BASE_DIR, "GTSD-220-test")
-TEST_FILE = os.path.join(BASE_DIR, "test.txt")
 EXAMPLES_DIR = os.path.join(BASE_DIR, "examples")
 
 CLASSES = {
@@ -33,63 +31,51 @@ CLASS_EXPLANATIONS = {
     "angle": "Captured from unusual or high angles, causing perspective distortions."
 }
 
-st.set_page_config(page_title="Street Sign Labeling", page_icon="🚦", layout="centered")
+st.set_page_config(page_title="Street Sign Conditions", page_icon="🚦", layout="centered")
 
-# ---------------- DATABASE ----------------
-def init_db():
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS labels (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user TEXT,
-                image TEXT,
-                label TEXT,
-                timestamp TEXT
-            )
-        """)
+# ---------------- SUPABASE ----------------
+conn = st.connection("supabase", type=SupabaseConnection)
+TABLE_NAME = "labels"
 
 def save_label(user, image, label):
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.execute(
-            "INSERT INTO labels (user, image, label, timestamp) VALUES (?, ?, ?, ?)",
-            (user, image, label, datetime.now().isoformat())
-        )
+    conn.table("labels").insert(
+        [{"user": user, 
+          "image": image, 
+          "label": label, 
+          "timestamp": datetime.now().isoformat()}],
+        count="None"
+    ).execute()
 
 def get_unlabeled_images(all_images):
-    with sqlite3.connect(DB_FILE) as conn:
-        rows = conn.execute("""
-            SELECT image, COUNT(DISTINCT user)
-            FROM labels
-            GROUP BY image
-        """).fetchall()
-    labeled_counts = {r[0]: r[1] for r in rows}
-    return [img for img in all_images if labeled_counts.get(img, 0) < 2]
+    """
+    Return images labeled by less than 2 users.
+    """
+    rows = conn.table(TABLE_NAME).select("*").execute().data
+    counts = {}
+    for r in rows:
+        counts[r["image"]] = counts.get(r["image"], set())
+        counts[r["image"]].add(r["user"])
+    return [img for img in all_images if len(counts.get(img, set())) < 2]
 
 def get_count(min_users=1):
-    with sqlite3.connect(DB_FILE) as conn:
-        if min_users == 1:
-            row = conn.execute("SELECT COUNT(DISTINCT image) FROM labels").fetchone()
-        else:
-            row = conn.execute("""
-                SELECT COUNT(*) FROM (
-                    SELECT image
-                    FROM labels
-                    GROUP BY image
-                    HAVING COUNT(DISTINCT user) >= ?
-                )
-            """, (min_users,)).fetchone()
-    return row[0] if row else 0
+    rows = conn.table(TABLE_NAME).select("*").execute().data
+    counts = {}
+    for r in rows:
+        counts[r["image"]] = counts.get(r["image"], set())
+        counts[r["image"]].add(r["user"])
+    if min_users == 1:
+        return sum(1 for users in counts.values() if len(users) >= 1)
+    else:
+        return sum(1 for users in counts.values() if len(users) >= min_users)
 
 # ---------------- UTILS ----------------
 def load_images_list():
     valid_exts = (".jpg", ".jpeg", ".png")
     image_paths = []
-
     for root, _, files in os.walk(IMAGE_DIR):
         for file in files:
             if file.lower().endswith(valid_exts):
                 image_paths.append(os.path.join(root, file))
-
     return image_paths
 
 def show_example_images():
@@ -98,12 +84,13 @@ def show_example_images():
             class_path = os.path.join(EXAMPLES_DIR, class_key)
             if os.path.isdir(class_path):
                 st.markdown(f"**{class_label}**")
+                st.caption(CLASS_EXPLANATIONS[class_key])
                 images = [f for f in os.listdir(class_path) if f.lower().endswith((".jpg", ".png", ".jpeg"))]
                 sample_images = random.sample(images, min(4, len(images)))
                 cols = st.columns(len(sample_images))
                 for col, img_file in zip(cols, sample_images):
                     col.image(os.path.join(class_path, img_file), width='stretch')
-
+                
 def select_random_image(unlabeled):
     return random.choice(unlabeled) if unlabeled else None
 
@@ -114,7 +101,7 @@ if "current_image" not in st.session_state:
     st.session_state.current_image = None
 
 # ---------------- UI ----------------
-st.title("🚦 Street Sign Labeling")
+st.title("🚦 Street Sign Conditions")
 st.markdown(
     """
     Help improve traffic sign recognition!<br>
@@ -128,20 +115,15 @@ if st.session_state.user is None:
     name = st.text_input("Enter your name:")
     col1, col2 = st.columns([1, 1])
     with col1:
-        if st.button("Start"):
-            if name.strip():
-                st.session_state.user = name.strip()
-                st.rerun()
-            else:
-                st.warning("Please enter a name.")
+        if st.button("Start") and name.strip():
+            st.session_state.user = name.strip()
+            st.rerun()
 
 # --- Examples ---
 show_example_images()
 
 # --- Main labeling ---
 if st.session_state.user:
-    #st.success(f"Hello **{st.session_state.user}** 👋")
-
     all_images = load_images_list()
     unlabeled = get_unlabeled_images(all_images)
     
@@ -160,11 +142,7 @@ if st.session_state.user:
 
         with col_labels:
             radio_key = f"label_{img_path}"
-            st.markdown("""
-                <style>
-                [role=radiogroup]{ gap:0.6rem; }
-                </style>
-            """, unsafe_allow_html=True)
+            st.markdown("<style>[role=radiogroup]{ gap:0.6rem; }</style>", unsafe_allow_html=True)
 
             label_choice = st.radio(
                 "Choose a label:",
@@ -188,10 +166,10 @@ if st.session_state.user:
         total_images = len(all_images)
 
         st.progress(min(user_count_once / total_images, 1.0))
-        st.caption(f"{user_count_once} of {total_images} images labeled by at least 1 user")
+        st.caption(f"{user_count_once} out of {total_images} images have been labeled by at least 1 user")
 
-        st.progress(min(user_count_twice / total_images, 1.0))
-        st.caption(f"{user_count_twice} of {total_images} images labeled by at least 2 users")
+        #st.progress(min(user_count_twice / total_images, 1.0))
+        #st.caption(f"{user_count_twice} of {total_images} images labeled by at least 2 users")
 
         if st.button("🔄 Skip image"):
             st.session_state.current_image = select_random_image(unlabeled)
