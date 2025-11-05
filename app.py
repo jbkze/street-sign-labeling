@@ -130,8 +130,8 @@ st.markdown(
 )
 
 # --- Examples ---
-if st.session_state.user is None:
-    show_example_images()
+#if st.session_state.user is None:
+show_example_images()
 
 # --- Login ---
 if st.session_state.user is None:
