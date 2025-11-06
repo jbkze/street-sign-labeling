@@ -52,7 +52,7 @@ def save_label_bg(user, image, label):
         ).execute()
     threading.Thread(target=_save, daemon=True).start()
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=120)  # Cache für 2 Minuten
 def fetch_labels():
     """
     Lädt alle Labels aus der Supabase-Tabelle mit Pagination.
