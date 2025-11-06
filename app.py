@@ -54,8 +54,25 @@ def save_label_bg(user, image, label):
 
 @st.cache_data(ttl=30)
 def fetch_labels():
-    rows = conn.table(TABLE_NAME).select("*").execute().data
-    return rows
+    """
+    Lädt alle Labels aus der Supabase-Tabelle mit Pagination.
+    Cacht das Ergebnis für 30 Sekunden.
+    """
+    PAGE_SIZE = 1000  # Supabase-Limit
+    # Gesamtanzahl abfragen
+    res = conn.table(TABLE_NAME).select("id", count="exact").limit(1).execute()
+    total_count = res.count or 0
+
+    all_rows = []
+
+    for offset in range(0, total_count, PAGE_SIZE):
+        start = offset
+        end = offset + PAGE_SIZE - 1
+        response = conn.table(TABLE_NAME).select("*").range(start, end).execute()
+        rows = response.data or []
+        all_rows.extend(rows)
+
+    return all_rows
 
 def get_unlabeled_images(all_images):
     """
