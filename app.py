@@ -165,7 +165,7 @@ if "user" in st.session_state and st.session_state.user:
     stats["total_labeled"] = total_labeled
     stats["rank"] = rank
     
-    markdown_text += f"👋 **Hello {user}** — 🏅 Rank: **{rank}**"
+    markdown_text += f"👋 Hello **{user}** — 🏅 Rank: **{rank}**"
 
 
 st.title("🚦 Street Sign Conditions")
