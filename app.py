@@ -56,7 +56,7 @@ def save_label_bg(user, image, label):
 def fetch_labels():
     """
     Lädt alle Labels aus der Supabase-Tabelle mit Pagination.
-    Cacht das Ergebnis für 30 Sekunden.
+    Cacht das Ergebnis für 120 Sekunden.
     """
     PAGE_SIZE = 1000  # Supabase-Limit
     # Gesamtanzahl abfragen
@@ -95,6 +95,19 @@ def get_count(min_users=1):
         return sum(1 for users in counts.values() if len(users) >= 1)
     else:
         return sum(1 for users in counts.values() if len(users) >= min_users)
+
+def get_stats_per_user(user_name):
+    rows = fetch_labels()  # gecachte Daten
+    user_labels = [r for r in rows if r["user"] == user_name]
+    total_labeled = len(user_labels)
+    # Rang berechnen
+    user_counts = {}
+    for r in rows:
+        user_counts[r["user"]] = user_counts.get(r["user"], 0) + 1
+    sorted_counts = sorted(user_counts.items(), key=lambda x: x[1], reverse=True)
+    rank = next((i + 1 for i, (u, _) in enumerate(sorted_counts) if u == user_name), None)
+
+    return total_labeled, rank
 
 # ---------------- UTILS ----------------
 @st.cache_data
@@ -136,13 +149,28 @@ if "user" not in st.session_state:
 if "current_image" not in st.session_state:
     st.session_state.current_image = None
 
+stats = {"total_labeled": 0,
+         "rank": 0
+         }
+
 # ---------------- UI ----------------
-st.title("🚦 Street Sign Conditions")
-st.markdown(
-    """
+markdown_text = """
     Help improve traffic sign recognition!<br>
     Select the type of defect for each street sign image and click <b>Submit</b>.<br>
-    """,
+    """
+
+if "user" in st.session_state and st.session_state.user:
+    user = st.session_state.user
+    total_labeled, rank = get_stats_per_user(user)
+    stats["total_labeled"] = total_labeled
+    stats["rank"] = rank
+    
+    markdown_text += f"👋 **Hello {user}** — 🏅 Rank: **{rank}**"
+
+
+st.title("🚦 Street Sign Conditions")
+st.markdown(
+    markdown_text,
     unsafe_allow_html=True
 )
 
@@ -153,7 +181,7 @@ show_example_images()
 # --- Login ---
 if st.session_state.user is None:
     name = st.text_input("Enter your name:")
-    
+        
     col1, col2 = st.columns([1, 1])
     
     with col1:
