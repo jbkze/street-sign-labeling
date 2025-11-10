@@ -254,7 +254,11 @@ if st.session_state.user:
             # current_class = [k for k, v in CLASSES.items() if v == label_choice][0]
             # st.caption(CLASS_EXPLANATIONS[current_class])
 
-            if st.button("✅ Submit"):
+            button_label = "✅ Submit"
+            if not selected_labels:
+                button_label = "✅ Submit (No defects)"
+
+            if st.button(button_label):
                 # rel_path = os.path.relpath(img_path, IMAGE_DIR)
                 selected_labels = [
                     REVERSE_CLASSES[choice] for choice in selected_labels
