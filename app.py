@@ -219,7 +219,7 @@ if st.session_state.user:
 
     if not unlabeled:
         st.balloons()
-        st.write("🎉 All images have been labeled twice! Thank you.")
+        st.write("🎉 All images have been labeled at least once! Thank you.")
     else:
         if st.session_state.current_image is None:
             st.session_state.current_image = select_random_image(unlabeled)
